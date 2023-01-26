@@ -49,6 +49,7 @@ class Flow:
     def start_driver(self, anticaptcha_on=False, anticaptcha_path=None, headless=False, metamask=False, metamask_path=None):
 
         self.activate_delay()
+        self.log_debug_with_lock('СТарт драйвера')
         # self.ads.creade_ads_profile(cookie=self.cookie)
         # self.driver = self.ads.connect_to_ads_selenium(self.ads.start_ads_profile())
         options_c = uc.ChromeOptions()
