@@ -78,7 +78,7 @@ class Flow:
             options=options_c, seleniumwire_options=options, service_log_path='NUL')
         self.driver.set_window_size(1700, 1080)
         self.wait = WebDriverWait(self.driver, 30)
-        self.driver.switch_to.window(self.driver.window_handles[-1])
+        #self.driver.switch_to.window(self.driver.window_handles[-1])
         if metamask:
             window_name = 'metamask'
             self.wait.until(EC.number_of_windows_to_be(2))
