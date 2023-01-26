@@ -84,6 +84,7 @@ class Flow:
             window_name = 'metamask'
             self.wait.until(EC.number_of_windows_to_be(2))
             for i in self.driver.window_handles:
+                print('check')
                 self.driver.switch_to.window(i)
                 if window_name in self.driver.title.lower():
                     break
