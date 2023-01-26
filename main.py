@@ -34,9 +34,6 @@ csv = cf.csv
 class Wifoo(Flow):
 
     def restart_driver(self):
-        try:
-            self.Lock.release()
-        except:pass
         self.log_debug_with_lock(f'{self.data} -- restart_driver')
         self.close_driver()
         self.start_driver(
@@ -46,7 +43,7 @@ class Wifoo(Flow):
     def go(self,):
         # self.proxy.change_ip()
         if self.proxy.proxy_link:
-            self.proxy.change_ip()
+            self.proxy.change_ip(only_check_inet=True)
         self.log_debug_with_lock(f'Старт потока {self.data}')
         self.restart_driver()
         self.get_new('https://guild.xyz/woofi')
