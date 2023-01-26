@@ -34,6 +34,9 @@ csv = cf.csv
 class Wifoo(Flow):
 
     def restart_driver(self):
+        try:
+            self.Lock.release()
+        except:pass
         self.log_debug_with_lock(f'{self.data} -- restart_driver')
         self.close_driver()
         self.start_driver(
