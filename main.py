@@ -81,7 +81,8 @@ if __name__ == '__main__':
     with open(f'{homeDir}\\stop.txt', 'w') as file:
         pass
     Lock = multiprocessing.Lock()
-    threads_count = int(input(f"Сколько потоков требуется? - "))
+    print(f'Кол-во данных - {datas.count_args}')
+    threads_count = int(input(f"Сколько потоков требуется (Прокси указано - {len(proxy_list)})? - "))
     delay = input('Задержка(либо 1-2, либо 0) - ')
     flow = 0
     while True:
