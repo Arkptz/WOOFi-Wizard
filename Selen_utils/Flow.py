@@ -198,11 +198,8 @@ class Flow:
         self.wait = WebDriverWait(self.driver, 30)
 
     def log_debug_with_lock(self, text: str):
-        print(1)
         self.Lock.acquire()
-        print(2)
         log.debug(text)
-        print(3)
         self.Lock.release()
 
     def wait_send(self, xpath, keys):
