@@ -76,6 +76,7 @@ class Flow:
             metamask_path = str(pathlib.Path(metamask_path).absolute())
             print(metamask_path)
             options_c.add_argument(f'--load-extension={metamask_path}')
+        print('ss')
         self.driver = uc.Chrome(
             options=options_c, seleniumwire_options=options, service_log_path='NUL')
         self.driver.set_window_size(1700, 1080)

@@ -101,7 +101,6 @@ if __name__ == '__main__':
                     t = multiprocessing.Process(
                         target=Wifoo(data, data_q, proxx, Lock, proxy_list, delay, csv=csv, count_accs=datas.count_args, count_make_accs=counter, excel_file=excel_file, log=log).start)
                     t.start()
-                    print('запуск процесса')
                     flow += 1
         while len(multiprocessing.active_children()) != 1:
             sleep(1)
