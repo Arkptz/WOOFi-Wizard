@@ -102,7 +102,7 @@ if __name__ == '__main__':
                     # proxx.change_ip()
                     proxy_list.remove(proxx)
                     t = multiprocessing.Process(
-                        target=Wifoo(data, data_q, proxx, Lock, proxy_list, delay, csv=csv, count_accs=datas.count_args, count_make_accs=counter, excel_file=excel_file, log=log).start)
+                        target=Wifoo(data, data_q, proxx, Lock, proxy_list, delay, csv=csv, count_accs=datas.count_args, count_make_accs=counter, excel_file=excel_file).start)
                     t.start()
                     flow += 1
         while len(multiprocessing.active_children()) != 1:
