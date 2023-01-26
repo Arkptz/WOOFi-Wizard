@@ -73,15 +73,11 @@ class Flow:
             # options_c.add_extension(
             #     metamask_path)
             metamask_path = str(pathlib.Path(metamask_path).absolute())
-            print(metamask_path)
             options_c.add_argument(f'--load-extension={metamask_path}')
         self.driver = uc.Chrome(
             options=options_c, seleniumwire_options=options, service_log_path='NUL')
         self.driver.set_window_size(1700, 1080)
         self.wait = WebDriverWait(self.driver, 30)
-        if self.proxy.proxy_link:
-            self.proxy.change_ip()
-        self.ip = self.proxy.check_connection()
         self.log_debug_with_lock(self.ip)
         self.driver.switch_to.window(self.driver.window_handles[-1])
         if metamask:
