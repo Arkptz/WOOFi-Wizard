@@ -31,108 +31,29 @@ datas = cf.datas
 csv = cf.csv
 
 
-class Rambler(Flow):
-    def go_setting(self):
-        try:
-            self.wait_click('//a[@data-list-view="settings"]')
-        except ElementClickInterceptedException:
-            for i in range(3):
-                self.click_for_x_y(1542, 77)
-                sleep(0.3)
-            self.go_setting()
-
-    def login_rambler(self):
-        self.get_new('https://mail.rambler.ru/settings/mailapps')
-        frame = self.driver.find_element(
-            By.XPATH, '/html/body/div[1]/div/div[2]/div[2]/iframe')
-        cur = self.driver.current_window_handle
-        self.driver.switch_to.frame(frame)
-        self.wait_send(
-            '//input[@class="rui-Input-input -motrika-nokeys"]', self.data.login)
-        self.wait_send(
-            '//input[@class="rui-Input-input -metrika-nokeys"]', self.data.password)
-        self.wait_click(
-            '//button[@data-cerber-id="login_form::main::login_button"]')
-        try:
-            ans = self.wait_2_elements(
-                '//iframe[@data-hcaptcha-widget-id]', '//div[@class="rui-FieldStatus-message"]')
-            if ans == 2:
-                return Statuses.nevalid
-            ans = self.wait_2_elements('//a[@href="/settings/accounts"]',
-                                       Captcha.captcha_xpath)
-            if ans == 2:
-                Captcha.captcha_check(self.driver)
-                self.wait_click(
-                    '//button[@data-cerber-id="login_form::main::login_button"]')
-        except Exception as e:
-            pass
-        ans = self.check_frame_and_window(
-            frame, '//div[@class="rui-FieldStatus-message"]', cur, '//a[@data-list-view="settings"]')
-        if ans == 1:
-            elem = self.driver.find_element(
-                By.XPATH, '//div[@class="rui-FieldStatus-message"]').text
-            if 'Неправильная почта' in elem:
-                return Statuses.nevalid
-            else:
-                return Statuses.left_captcha
-        self.driver.switch_to.window(cur)
-
-    def switch_imap(self):
-        self.go_setting()
-        self.log_debug_with_lock(f'{self.data} -- go_setting')
-        self.wait_click('//a[@href="/settings/mailapps"]')
-        self.log_debug_with_lock(f'{self.data} -- mailapps')
-        elem = self.wait_and_return_elem(
-            '//button[contains(@class, "rui-ToggleOption-toggleOption") and @value="true"]', sleeps=5)
-        self.log_debug_with_lock(f'{self.data} -- ищем элем вкл')
-        val = elem.get_attribute('aria-pressed')
-        if val == 'true':
-            self.log_debug_with_lock(f'{self.data} -- imap уже включён')
-            return True
-        else:
-            elem.click()
-            self.log_debug_with_lock(f'{self.data} -- кликнули по элементу, ждём капчу')
-            if not Captcha.captcha_check(self.driver):
-                return False
-            else:
-                self.wait_click(
-                    '//button[@class="rui-Button-button rui-Button-type-primary rui-Button-size-small rui-Button-iconPosition-left MailAppsChange-submitButton-S7"]', sleeps=3)  # отправить
-                return True
-
-    def change_pass(self):
-        self.get_new(
-            'https://id.rambler.ru/account/change-password?back=https://mail.rambler.ru/settings/security')
-        old_pass = self.wait_and_return_elem(
-            '//input[@class="rui-Input-input -metrika-nokeys" and @id="password"]')
-        if not Captcha.captcha_check(self.driver):
-            return False
-        else:
-            old_pass.send_keys(self.data.password)
-            self.wait_send(
-                '//input[@class="rui-Input-input -metrika-nokeys" and @id="newPassword"]', self.data.new_password)
-            self.wait_click(
-                '//button[@data-cerber-id="profile::change_password::save_password_button"]')
-            sleep(5)
-            return True
-
-    def check_imap(self, log, pas):
-        try:
-            mail = imaplib.IMAP4_SSL('imap.rambler.ru')
-            mail.login(log, pas)
-            return True
-        except Exception as e:
-            return False
+class Wifoo(Flow):
 
     def restart_driver(self):
         self.log_debug_with_lock(f'{self.data} -- restart_driver')
         self.close_driver()
-        self.start_driver()
+        self.start_driver(
+            metamask=True, metamask_path=f'{homeDir}\\files\\metamask\\')
+        self.rega_metamask()
 
     def go(self,):
+        # self.proxy.change_ip()
         self.log_debug_with_lock(f'Старт потока {self.data}')
         self.restart_driver()
-        self.get_new()
-        
+        self.get_new('https://guild.xyz/woofi')
+        self.wait_click('//button[@data-dd-action-name="Join"]')#join to guild roles
+        self.wait_click('//button[@data-dd-action-name="Connect wallet (JoinModal)"]')# connect wallet
+        self.connect_metamask_to_site(xpath='//button[@class="chakra-button css-16dnw0d" and .="MetaMask"]')
+        self.sign_message_metamask(xpath='//button[@class="chakra-button css-x1klbh"]')#Verify account
+        sleep(3)
+        ans = self.connect_discord(xpath='//button[@data-dd-action-name="Connect Discord (JoinModal)"]')
+        if ans != Statuses.success:
+            return ans
+        sleep(1000)
         return Statuses.success
 
     def start(self,):
@@ -173,7 +94,7 @@ if __name__ == '__main__':
                     # proxx.change_ip()
                     proxy_list.remove(proxx)
                     t = multiprocessing.Process(
-                        target=Rambler(data, data_q, proxx, Lock, proxy_list, delay, csv=csv, count_accs=datas.count_args, count_make_accs=counter, excel_file=excel_file, log=log).start)
+                        target=Wifoo(data, data_q, proxx, Lock, proxy_list, delay, csv=csv, count_accs=datas.count_args, count_make_accs=counter, excel_file=excel_file, log=log).start)
                     t.start()
                     flow += 1
         while len(multiprocessing.active_children()) != 1:

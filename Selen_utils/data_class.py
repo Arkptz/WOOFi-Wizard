@@ -7,27 +7,16 @@ import base64
 @dataclass
 class data_cl:
     string:str
-    login:str=None
-    password:str=None
-    new_password:str=None
-    change_pass:bool = False
-    on_off_imap:bool = False
+    seed:str=None
+    ds_token:str=None
     def __init__(self, string:str) -> None:
         self.string = string
-        spl_string = string.split(':')
-        count_true_false = ctf=  string.count('true')
-        lenght = ln = len(spl_string)
-        if ln == 2 +ctf:
-            self.login,self.password = spl_string[:2]
-            if ctf ==1:
-                self.on_off_imap = True
-        elif ln == 3 +ctf:
-            self.login, self.password,self.new_password  = spl_string[:3]
-            self.change_pass = True
-            if ctf == 1:
-                self.on_off_imap = True
+        spl_string = string.split('|')
+        ln = len(spl_string)
+        if ln == 2 :
+            self.seed, self.ds_token = spl_string
         else:
-            logger.error(f'Ошибка ввода данных: {string}')
+            print(f'Ошибка ввода данных: {string}')
             sys.exit()
 
 
@@ -36,3 +25,5 @@ class Statuses:
     success = 'Success'
     nevalid = 'Невалид'
     left_captcha = 'Левая капча'
+    nevalid_ds = 'Невалид дс'
+    need_click_button = 'click_connect'

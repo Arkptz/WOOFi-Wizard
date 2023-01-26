@@ -13,6 +13,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.select import Select
+import seleniumwire.undetected_chromedriver as uc
 from dataclasses import dataclass
 from colorama import Fore
 from loguru import logger
@@ -22,6 +23,7 @@ from time import sleep, time
 import random
 import traceback
 import warnings
+import pathlib
 ua = UserAgent()
 warnings.filterwarnings("ignore")
 a_z = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_'
@@ -43,17 +45,18 @@ class Flow:
     count_accs: int = None
     count_make_accs: multiprocessing.Value = None
     excel_file: CsvCheck = None
-    log:logger =None
+    log: logger = None
 
-    def start_driver(self, anticaptcha_on=False, anticaptcha_path=None, headless=False):
+    def start_driver(self, anticaptcha_on=False, anticaptcha_path=None, headless=False, metamask=False, metamask_path=None):
+
         self.activate_delay()
         # self.ads.creade_ads_profile(cookie=self.cookie)
         # self.driver = self.ads.connect_to_ads_selenium(self.ads.start_ads_profile())
-        options_c = Options()
-        options_c.add_experimental_option(
-            "prefs", {"profile.default_content_setting_values.notifications": 1})
-        options_c.add_argument(
-            f'--proxy-server=http://{self.proxy.url_proxy}')
+        options_c = uc.ChromeOptions()
+        # options_c.add_experimental_option(
+        #     "prefs", {"profile.default_content_setting_values.notifications": 1})
+        # options_c.add_argument(
+        #     f'--proxy-server=http://{self.proxy.url_proxy}')
         options_c.add_argument(
             '--disable-blink-features=AutomationControlled')
         options = {'proxy':
@@ -62,13 +65,20 @@ class Flow:
         options_c.add_argument(f"user-agent={ua.random}")
         if headless:
             options_c.add_argument("--headless")
-        options_c.add_experimental_option(
-            'excludeSwitches', ['enable-logging'])
+        # options_c.add_experimental_option(
+        #     'excludeSwitches', ['enable-logging'])
         if anticaptcha_on:
             options_c.add_extension(
                 anticaptcha_path)
-        self.driver = webdriver.Chrome(
+        if metamask:
+            # options_c.add_extension(
+            #     metamask_path)
+            metamask_path = str(pathlib.Path(metamask_path).absolute())
+            print(metamask_path)
+            options_c.add_argument(f'--load-extension="{metamask_path}"')
+        self.driver = uc.Chrome(
             options=options_c, seleniumwire_options=options, service_log_path='NUL')
+        sleep(10000)
         self.driver.set_window_size(1700, 1080)
         self.wait = WebDriverWait(self.driver, 30)
         if self.proxy.proxy_link:
@@ -76,6 +86,13 @@ class Flow:
         self.ip = self.proxy.check_connection()
         self.log_debug_with_lock(self.ip)
         self.driver.switch_to.window(self.driver.window_handles[-1])
+        if metamask:
+            window_name = 'metamask'
+            self.wait.until(EC.number_of_windows_to_be(2))
+            for i in self.driver.window_handles:
+                self.driver.switch_to.window(i)
+                if window_name in self.driver.title.lower():
+                    break
 
     def activate_delay(self):
         d = self.delay
@@ -156,6 +173,18 @@ class Flow:
             except Exception as e:
                 return 3
 
+    def wait_many_elements(self, elems: list[str]):
+        lst = []
+        for elem in elems:
+            lst.append(lambda x: x.find_element(By.XPATH, elem))
+        self.wait.until(EC.any_of(**lst))
+        for num, i in enumerate(elems):
+            try:
+                self.driver.find_element(By.XPATH, i)
+                return num+1
+            except:
+                pass
+
     def wait_and_return_elem(self, xpath, sec=30, sleeps=None):
         self.wait = WebDriverWait(self.driver, sec)
         self.wait.until(EC.element_to_be_clickable((By.XPATH, xpath)))
@@ -234,3 +263,144 @@ class Flow:
         self.excel_file.add_string(_data)
         if not add_to_end:
             self.csv.add_string({'data': f'{self.data.string}'})
+
+    def authorize_discord(self, att=1):
+        ans = self.wait_2_elements(
+            '//input[@type="password"]', '//button[@class="button-f2h6uQ lookFilled-yCfaCM colorBrand-I6CyqQ sizeMedium-2bFIHr grow-2sR_-F"]')
+        if ans == 1:
+            func = '''function login(token) {
+                        setInterval(() => {
+                            document.body.appendChild(document.createElement `iframe`).contentWindow.localStorage.token = `"${token}"`
+                        }, 50);
+                        setTimeout(() => {
+                            location.reload();
+                        }, 2500);
+                        }
+                        '''
+            self.driver.execute_script(
+                func + f"login('{self.data.ds_token}');")
+            sleep(10)
+            elems = ['//button[@class="button-f2h6uQ lookFilled-yCfaCM colorBrand-I6CyqQ sizeMedium-2bFIHr grow-2sR_-F"]',
+                     '//section[@class="panels-3wFtMD"]',
+                     '//div[contains(.,"You need to verify your account")]',
+                     '//input[@type="password"]']
+            ans = self.wait_many_elements(elems)
+            if ans == 4:
+                if att == 3:
+                    return Statuses.nevalid_ds
+                self.driver.refresh()
+                self.authorize_discord(att=att+1)
+            elif ans == 3:
+                return Statuses.nevalid_ds
+            elif ans == 2:
+                return Statuses.need_click_button
+            elif ans == 1:
+                self.wait_click(
+                    '//button[@class="button-f2h6uQ lookFilled-yCfaCM colorBrand-I6CyqQ sizeMedium-2bFIHr grow-2sR_-F"]')
+                self.log_debug_with_lock(
+                    f'{self.data} -- прожали авториз (дс)')
+                return Statuses.success
+
+    def connect_discord(self, xpath=False):
+        cur = self.driver.current_window_handle
+        counts = len(self.driver.window_handles)
+        if xpath:
+            self.wait_click(xpath)
+        self.wait.until(EC.number_of_windows_to_be(counts+1))
+        ans = self.authorize_discord()
+        if ans in [Statuses.nevalid_ds]:
+            return ans
+        elif ans == Statuses.need_click_button:
+            self.driver.close()
+            self.wait.until(EC.number_of_windows_to_be(counts))
+            self.driver.switch_to.window(cur)
+            self.connect_discord(xpath=xpath)
+        elif ans == Statuses.success:
+            self.driver.switch_to.window(self.driver.window_handles[-1])
+            self.wait_click(
+                '//button[@class="button btn--rounded btn-primary"]')  # next
+            self.wait_click(
+                '//button[@data-testid="page-container-footer-next"]')  # connect
+            self.wait.until(EC.number_of_windows_to_be(counts))
+            self.driver.switch_to.window(cur)
+            return Statuses.success
+
+    def restart_metamask(self):
+        self.get_new(
+            'chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/home.html')
+
+    def connect_metamask_to_site(self, xpath=False, get=None):
+        cur = self.driver.current_window_handle
+        counts = len(self.driver.window_handles)
+        if xpath:
+            self.wait_click(xpath)
+        if get:
+            self.get_new(get)
+        self.wait.until(EC.number_of_windows_to_be(counts+1))
+        self.driver.switch_to.window(self.driver.window_handles[-1])
+        self.wait_click(
+            '//button[@class="button btn--rounded btn-primary"]')  # next
+        self.wait_click(
+            '//button[@data-testid="page-container-footer-next"]')  # connect
+        self.wait.until(EC.number_of_windows_to_be(counts))
+        self.driver.switch_to.window(cur)
+
+    def sign_message_metamask(self, xpath=None):
+        cur = self.driver.current_window_handle
+        counts = len(self.driver.window_handles)
+        if xpath:
+            self.wait_click(xpath)
+        self.wait.until(EC.number_of_windows_to_be(counts+1))
+        self.driver.switch_to.window(self.driver.window_handles[-1])
+        self.wait_click(
+            '//button[@data-testid="request-signature__sign"]')  # sign
+        self.wait.until(EC.number_of_windows_to_be(counts))
+        self.driver.switch_to.window(cur)
+        return Statuses.success
+
+    def rega_metamask(self):
+        while True:
+            ans = self.wait_2_elements(
+                '//button[@class="critical-error__alert__button"]', '//button[@data-testid="onboarding-import-wallet"]')
+            if ans == 2:
+                self.wait_click(
+                    '//button[@data-testid="onboarding-import-wallet"]')
+                break
+            else:
+                try:
+                    self.restart_metamask()
+                except:
+                    continue
+        self.wait_click('//button[@data-testid="metametrics-i-agree"]')
+
+        seed_new = self.data.seed.split(' ')
+        self.wait_and_return_elem(
+            '//input[@data-testid="import-srp__srp-word-0"]')
+        for i in range(12):
+            self.driver.find_element(
+                By.XPATH, f'//input[@data-testid="import-srp__srp-word-{i}"]').send_keys(f'{seed_new[i]}')
+        self.wait_click('//button[@data-testid="import-srp-confirm"]')
+        self.wait_send(
+            '//input[@data-testid="create-password-new"]', 'InFiNiTi2022')
+        self.wait_send(
+            '//input[@data-testid="create-password-confirm"]', 'InFiNiTi2022')
+        self.wait_click('//input[@data-testid="create-password-terms"]')
+        self.wait_click('//button[@data-testid="create-password-import"]')
+        # всё выполнено
+        self.wait_click('//button[@data-testid="onboarding-complete-done"]')
+        sleep(2)
+        self.get_new(
+            'chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/home.html#onboarding/unlock')
+        self.wait_send(
+            '//input[@data-testid="unlock-password"]', 'InFiNiTi2022')
+        self.wait_click('//button[@data-testid="unlock-submit"]')
+        self.wait_click(
+            '//button[@data-testid="onboarding-complete-done"]')  # ПОнятно!
+        self.wait_click('//button[@data-testid="pin-extension-next"]')  # Далее
+        sleep(1)
+        self.wait_click(
+            '//button[@data-testid="pin-extension-done"]')  # Выполнено
+        self.wait_click('//button[.="Активность"]')
+        sleep(1)
+        return Statuses.success
+
