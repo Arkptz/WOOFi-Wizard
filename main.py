@@ -37,11 +37,13 @@ class Wifoo(Flow):
         self.log_debug_with_lock(f'{self.data} -- restart_driver')
         self.close_driver()
         self.start_driver(
-            metamask=True, metamask_path=f'{homeDir}\\files\\metamask\\')
+            metamask=True, metamask_path=f'{homeDir}\\files\\nkbihfbeogaeaoehlefnkodbefgpgknn\\10.24.1_0')
         self.rega_metamask()
 
     def go(self,):
         # self.proxy.change_ip()
+        if self.proxy.proxy_link:
+            self.proxy.change_ip()
         self.log_debug_with_lock(f'Старт потока {self.data}')
         self.restart_driver()
         self.get_new('https://guild.xyz/woofi')
@@ -53,7 +55,9 @@ class Wifoo(Flow):
         ans = self.connect_discord(xpath='//button[@data-dd-action-name="Connect Discord (JoinModal)"]')
         if ans != Statuses.success:
             return ans
-        sleep(1000)
+        sleep(3)
+        self.wait_click('//button[@class="chakra-button css-lcnqgc"]')#join guild
+        sleep(5)
         return Statuses.success
 
     def start(self,):
@@ -67,7 +71,7 @@ if __name__ == '__main__':
     counter = multiprocessing.Value('i', 0)
     proxy_list = m.list()
     excel_file = CsvCheck(name_file=rf'{homeDir}\\result.xlsx', colums_check=[
-                          'mail', 'pass', 'imap', 'result'], type_file='excel')
+                          'seed', 'token', 'result'], type_file='excel')
     excel_file.check_file()
     data_q = datas.get_queue()
     with open(f'{homeDir}\\txt\\proxy.txt') as file:

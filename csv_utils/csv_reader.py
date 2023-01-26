@@ -55,7 +55,6 @@ class CsvCheck:
     def save_file(self, need_lock=True):
         if need_lock:
             self.Lock.acquire()
-            print('//')
         if self.type_file == 'csv':
             self.df.to_csv(self.name_file)
         elif self.type_file == 'excel':

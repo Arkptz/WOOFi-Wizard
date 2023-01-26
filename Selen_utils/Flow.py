@@ -59,9 +59,9 @@ class Flow:
         #     f'--proxy-server=http://{self.proxy.url_proxy}')
         options_c.add_argument(
             '--disable-blink-features=AutomationControlled')
-        options = {'proxy':
+        options = {{'proxy':
                    {'http': f'http://{self.proxy.url_proxy}',
-                    'http': f'https://{self.proxy.url_proxy}', }}
+                    'http': f'https://{self.proxy.url_proxy}', }}}
         options_c.add_argument(f"user-agent={ua.random}")
         if headless:
             options_c.add_argument("--headless")
@@ -75,10 +75,9 @@ class Flow:
             #     metamask_path)
             metamask_path = str(pathlib.Path(metamask_path).absolute())
             print(metamask_path)
-            options_c.add_argument(f'--load-extension="{metamask_path}"')
+            options_c.add_argument(f'--load-extension={metamask_path}')
         self.driver = uc.Chrome(
             options=options_c, seleniumwire_options=options, service_log_path='NUL')
-        sleep(10000)
         self.driver.set_window_size(1700, 1080)
         self.wait = WebDriverWait(self.driver, 30)
         if self.proxy.proxy_link:
@@ -175,15 +174,14 @@ class Flow:
 
     def wait_many_elements(self, elems: list[str]):
         lst = []
-        for elem in elems:
-            lst.append(lambda x: x.find_element(By.XPATH, elem))
-        self.wait.until(EC.any_of(**lst))
+        self.wait.until(EC.any_of(*[EC.visibility_of_element_located((By.XPATH, elem)) for elem in elems]))
         for num, i in enumerate(elems):
             try:
                 self.driver.find_element(By.XPATH, i)
                 return num+1
             except:
                 pass
+        raise
 
     def wait_and_return_elem(self, xpath, sec=30, sleeps=None):
         self.wait = WebDriverWait(self.driver, sec)
@@ -223,16 +221,13 @@ class Flow:
                 res = Statuses.error
                 self.log_debug_with_lock(
                     f'{self.data} -- {traceback.format_exc()}')
-        if not self._check_valid_thread(res) and res != Statuses.nevalid:
+        if not self._check_valid_thread(res) and res != Statuses.nevalid_ds:
             self.data_q.put(self.data)
             add_to_end = True
-        if not self._check_valid_thread(res):
-            if res == Statuses.success:
-                return 'Error'
         return res, add_to_end
 
     def _check_valid_thread(self, res):
-        if res != Statuses.success or self.data.change_pass == Statuses.error or self.data.on_off_imap == Statuses.error:
+        if res != Statuses.success:
             return False
         return True
 
@@ -246,7 +241,7 @@ class Flow:
             self.log_debug_with_lock(f'{txt}')
             try:
                 self.driver.save_screenshot(
-                    f'{homeDir}\\Screenshots_error\\{self.data.login}.png')
+                    f'{homeDir}\\Screenshots_error\\{self.data.ds_token}.png')
             except Exception as e:
                 self.log_debug_with_lock(
                     f'{self.data} -- {traceback.format_exc()}')
@@ -255,18 +250,14 @@ class Flow:
             print(Fore.GREEN + txt)
         self.close_driver()
         self.proxy_list.append(self.proxy)
-        _data = {'mail': self.data.string, 'result': f'{res}{dop_txt}'}
-        if self.data.on_off_imap:
-            _data['imap'] = self.data.on_off_imap
-        if self.data.change_pass:
-            _data['pass'] = self.data.change_pass
+        _data = {'seed': self.data.seed, 'result': f'{res}{dop_txt}', 'token':self.data.ds_token}
         self.excel_file.add_string(_data)
         if not add_to_end:
             self.csv.add_string({'data': f'{self.data.string}'})
 
     def authorize_discord(self, att=1):
-        ans = self.wait_2_elements(
-            '//input[@type="password"]', '//button[@class="button-f2h6uQ lookFilled-yCfaCM colorBrand-I6CyqQ sizeMedium-2bFIHr grow-2sR_-F"]')
+        ans = self.wait_many_elements([
+            '//input[@name="password"]', '//button[@class="button-f2h6uQ lookFilled-yCfaCM colorBrand-I6CyqQ sizeMedium-2bFIHr grow-2sR_-F"]'])
         if ans == 1:
             func = '''function login(token) {
                         setInterval(() => {
@@ -283,7 +274,7 @@ class Flow:
             elems = ['//button[@class="button-f2h6uQ lookFilled-yCfaCM colorBrand-I6CyqQ sizeMedium-2bFIHr grow-2sR_-F"]',
                      '//section[@class="panels-3wFtMD"]',
                      '//div[contains(.,"You need to verify your account")]',
-                     '//input[@type="password"]']
+                     '//input[@name="password"]']
             ans = self.wait_many_elements(elems)
             if ans == 4:
                 if att == 3:
@@ -307,6 +298,7 @@ class Flow:
         if xpath:
             self.wait_click(xpath)
         self.wait.until(EC.number_of_windows_to_be(counts+1))
+        self.driver.switch_to.window(self.driver.window_handles[-1])
         ans = self.authorize_discord()
         if ans in [Statuses.nevalid_ds]:
             return ans
@@ -316,18 +308,19 @@ class Flow:
             self.driver.switch_to.window(cur)
             self.connect_discord(xpath=xpath)
         elif ans == Statuses.success:
-            self.driver.switch_to.window(self.driver.window_handles[-1])
-            self.wait_click(
-                '//button[@class="button btn--rounded btn-primary"]')  # next
-            self.wait_click(
-                '//button[@data-testid="page-container-footer-next"]')  # connect
             self.wait.until(EC.number_of_windows_to_be(counts))
             self.driver.switch_to.window(cur)
             return Statuses.success
 
     def restart_metamask(self):
+        for i in range(10):
+            try:
+                self.driver.switch_to.window(self.driver.window_handles[0])
+                self.driver.switch_to.new_window('tab')
+                break
+            except:print(traceback.format_exc())
         self.get_new(
-            'chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/home.html')
+            'chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/home.html#onboarding/welcome')
 
     def connect_metamask_to_site(self, xpath=False, get=None):
         cur = self.driver.current_window_handle
@@ -360,17 +353,20 @@ class Flow:
 
     def rega_metamask(self):
         while True:
-            ans = self.wait_2_elements(
-                '//button[@class="critical-error__alert__button"]', '//button[@data-testid="onboarding-import-wallet"]')
+            ans = self.wait_many_elements([
+                '//span[@id="critical-error-button"]', '//button[@data-testid="onboarding-import-wallet"]'])
             if ans == 2:
                 self.wait_click(
                     '//button[@data-testid="onboarding-import-wallet"]')
                 break
             else:
                 try:
-                    self.restart_metamask()
+                    self.wait_click('//span[@id="critical-error-button"]')
+                    sleep(2)
                 except:
+                    traceback.print_exc()
                     continue
+                self.restart_metamask()
         self.wait_click('//button[@data-testid="metametrics-i-agree"]')
 
         seed_new = self.data.seed.split(' ')
