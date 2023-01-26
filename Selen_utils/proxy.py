@@ -44,9 +44,8 @@ class Proxy_Class:
         return ip, port, login, password, proxy_link
 
     def change_ip(self, only_check_inet=False):
-        s = self.get_session()
         if not only_check_inet:
-            log.debug(s.get('https://' + self.proxy_link, timeout=30).text)
+            log.debug(requests.get('https://' + self.proxy_link, timeout=30).text)
             sleep(3)
         for cycle_index in range(10):
             if cycle_index == 10:
