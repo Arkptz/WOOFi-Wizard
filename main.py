@@ -42,11 +42,12 @@ class Wifoo(Flow):
 
     def go(self,):
         # self.proxy.change_ip()
-        if self.proxy.proxy_link:
-            self.proxy.change_ip(only_check_inet=True)
+
         self.log_debug_with_lock(f'Старт потока {self.data}')
         self.restart_driver()
-        self.get_new(self.proxy.proxy_link)
+        if self.proxy.proxy_link:
+            self.get_new(self.proxy.proxy_link)
+            sleep(5)
         self.get_new('https://guild.xyz/woofi')
         self.wait_click('//button[@data-dd-action-name="Join"]')#join to guild roles
         self.wait_click('//button[@data-dd-action-name="Connect wallet (JoinModal)"]')# connect wallet
