@@ -1,0 +1,8 @@
+pandas==1.5.2
+loguru==0.6.0
+selenium
+requests
+openpyxl
+dataclasses==0.6
+fake_useragent
+loguru
