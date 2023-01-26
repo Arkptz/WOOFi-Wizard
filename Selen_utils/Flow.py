@@ -16,7 +16,7 @@ from selenium.webdriver.support.select import Select
 import seleniumwire.undetected_chromedriver as uc
 from dataclasses import dataclass
 from colorama import Fore
-from loguru import logger
+from loguru import logger as log
 import os
 import pandas as pd
 from time import sleep, time
@@ -45,7 +45,6 @@ class Flow:
     count_accs: int = None
     count_make_accs: multiprocessing.Value = None
     excel_file: CsvCheck = None
-    log: logger = None
 
     def start_driver(self, anticaptcha_on=False, anticaptcha_path=None, headless=False, metamask=False, metamask_path=None):
 
@@ -199,8 +198,11 @@ class Flow:
         self.wait = WebDriverWait(self.driver, 30)
 
     def log_debug_with_lock(self, text: str):
+        print(1)
         self.Lock.acquire()
-        self.log.debug(text)
+        print(2)
+        log.debug(text)
+        print(3)
         self.Lock.release()
 
     def wait_send(self, xpath, keys):
