@@ -59,9 +59,9 @@ class Flow:
         #     f'--proxy-server=http://{self.proxy.url_proxy}')
         options_c.add_argument(
             '--disable-blink-features=AutomationControlled')
-        options = {{'proxy':
+        options = {'proxy':
                    {'http': f'http://{self.proxy.url_proxy}',
-                    'http': f'https://{self.proxy.url_proxy}', }}}
+                    'http': f'https://{self.proxy.url_proxy}', }}
         options_c.add_argument(f"user-agent={ua.random}")
         if headless:
             options_c.add_argument("--headless")
