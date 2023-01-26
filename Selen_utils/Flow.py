@@ -294,7 +294,9 @@ class Flow:
             self.wait_click(xpath)
         self.wait.until(EC.number_of_windows_to_be(counts+1))
         self.driver.switch_to.window(self.driver.window_handles[-1])
+        self.wait = WebDriverWait(self.driver,60)
         ans = self.authorize_discord()
+        self.wait = WebDriverWait(self.driver,30)
         if ans in [Statuses.nevalid_ds]:
             return ans
         elif ans == Statuses.need_click_button:
