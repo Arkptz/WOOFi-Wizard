@@ -36,8 +36,9 @@ class Wifoo(Flow):
     def restart_driver(self):
         self.log_debug_with_lock(f'{self.data} -- restart_driver')
         self.close_driver()
+        metamask_path = f'{homeDir}\\files\\metamask.crx'#f'{homeDir}\\files\\nkbihfbeogaeaoehlefnkodbefgpgknn\\10.24.1_0'
         self.start_driver(
-            metamask=True, metamask_path=f'{homeDir}\\files\\nkbihfbeogaeaoehlefnkodbefgpgknn\\10.24.1_0')
+            metamask=True, metamask_path=metamask_path, ads=True)
         self.rega_metamask()
 
     def go(self,):
@@ -49,10 +50,11 @@ class Wifoo(Flow):
         self.get_new('https://guild.xyz/woofi')
         self.wait_click('//button[@data-dd-action-name="Join"]')#join to guild roles
         self.wait_click('//button[@data-dd-action-name="Connect wallet (JoinModal)"]')# connect wallet
-        self.connect_metamask_to_site(xpath='//button[@class="chakra-button css-16dnw0d" and .="MetaMask"]')
+        self.connect_metamask_to_site(xpath='//button[.="MetaMask"]')
         self.sign_message_metamask(xpath='//button[@class="chakra-button css-x1klbh"]')#Verify account
         sleep(3)
         ans = self.connect_discord(xpath='//button[@data-dd-action-name="Connect Discord (JoinModal)"]')
+        print(ans)
         if ans != Statuses.success:
             return ans
         sleep(3)
