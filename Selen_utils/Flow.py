@@ -46,7 +46,7 @@ class Flow:
     count_accs: int = None
     count_make_accs: multiprocessing.Value = None
     excel_file: CsvCheck = None
-    
+    ads = False
 
     def start_driver(self, anticaptcha_on=False, anticaptcha_path=None, headless=False, metamask=False, metamask_path=None, selenoid=False, ads=False):
         self.ads = ads
@@ -157,10 +157,12 @@ class Flow:
     def close_driver(self):
         try:
             self.driver.quit()
-            if self.ads:
-                self.ads.del_ads_id()
         except:
             pass
+        if self.ads:
+            self.ads.close_browser()
+            sleep(2)
+            self.ads.del_ads_id()
 
     def check_frame_and_window(self, frame, frame_elem, window, window_elem, timeout=30):
         time_start = time()
@@ -305,7 +307,7 @@ class Flow:
                 if att >= 3:
                     return Statuses.nevalid_ds
                 self.driver.refresh()
-                self.authorize_discord(att=att+1)
+                return self.authorize_discord(att=att+1)
             elif ans == 3:
                 return Statuses.nevalid_ds
             elif ans == 2:

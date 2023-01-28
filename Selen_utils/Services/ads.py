@@ -73,6 +73,28 @@ class Ads:
         self.ads_id = resp['data']['id']
         return resp['data']['id']
 
+    def close_browser(self):
+        open_url = self.url_ads + "/api/v1/browser/stop"
+        self.Lock.acquire()
+        sleep(1)
+        resp = ''
+        for i in range(25):
+            try:
+                resp = requests.get(
+                    open_url, params={'user_id': [self.ads_id]}).json()
+            except:
+                continue
+            if resp['code'] == 0:
+                break
+            sleep(1)
+        if resp["code"] != 0:
+            print(resp["msg"])
+            print("please check ads_id")
+            self.Lock.release()
+            raise
+        self.Lock.release()
+        sleep(3)
+
     def del_ads_id(self):
         open_url = self.url_ads + "/api/v1/user/delete"
         self.Lock.acquire()

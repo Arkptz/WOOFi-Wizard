@@ -54,7 +54,6 @@ class Wifoo(Flow):
         self.sign_message_metamask(xpath='//button[@class="chakra-button css-x1klbh"]')#Verify account
         sleep(3)
         ans = self.connect_discord(xpath='//button[@data-dd-action-name="Connect Discord (JoinModal)"]')
-        print(ans)
         if ans != Statuses.success:
             return ans
         sleep(3)
