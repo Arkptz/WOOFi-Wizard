@@ -1,6 +1,6 @@
 import requests
 import multiprocessing
-from selenium import webdriver
+from seleniumwire import webdriver
 from selenium.webdriver.chrome.options import Options
 from time import sleep
 from Selen_utils import Proxy_Class
